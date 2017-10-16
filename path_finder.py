@@ -141,6 +141,8 @@ class MapDesc:
         return points
 
     def improve_path(self, points):
+        iterations = 16
+
         def length(path):
             r = 0
             for i in xrange(len(points) - 1):
@@ -150,7 +152,7 @@ class MapDesc:
                 r += math.sqrt(x * x + y * y)
             return r
         before = length(points)
-        for x in xrange(2):
+        for x in xrange(iterations):
             for i in xrange(len(points) - 2):
                 a = points[i + 0]
                 b = points[i + 1]
@@ -158,9 +160,9 @@ class MapDesc:
 
                 p0 = b
                 p1 = ((a[0] + c[0]) / 2, (a[1] + c[1]) / 2)
-                for j in xrange(2):
+                for j in xrange(iterations):
                     p = ((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2)
-                    if self._has_direct_path(p0, p) and self._has_direct_path(p, p1):
+                    if self._has_direct_path(a, p) and self._has_direct_path(c, p):
                         p0, p1 = p, p1
                     else:
                         p0, p1 = p0, p
@@ -176,6 +178,7 @@ if __name__ == '__main__':
     map.draw()
 
     path = map.build_path((50, 70), (25, 450))
+    # path = map.build_path((50, 70), (160, 250))
     map.draw_path(path, color=(128, 128, 255, 255))
     map.draw_path(map.improve_path(path))
 
