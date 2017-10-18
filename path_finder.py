@@ -3,8 +3,11 @@ from graph import *
 import random
 import math
 
-im = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
+MAX_X = 512
+MAX_Y = 512
+im = Image.new("RGBA", (MAX_X, MAX_Y), (255, 255, 255, 255))
 draw = ImageDraw.Draw(im)
+
 
 RED = (255, 0, 0, 255)
 GREEN = (0, 255, 0, 255)
@@ -48,25 +51,93 @@ def cross_edge(a, b, c, d):
     return ua >= 0.0 and ua < 1.0 and ub >= 0.0 and ub < 1.0
 
 
+def point_in_polygon(test, polygon):
+    q_patt = [[0, 1], [3, 2]]
+
+    if len(polygon) < 3:
+        return False
+
+    pred_pt_x, pred_pt_y = polygon[-1]
+    pred_pt_x -= test[0]
+    pred_pt_y -= test[1]
+
+    pred_q = q_patt[pred_pt_y < 0][pred_pt_x < 0]
+
+    w = 0
+
+    for cur_pt_x, cur_pt_y in polygon:
+        cur_pt_x -= test[0]
+        cur_pt_y -= test[1]
+
+        q = q_patt[cur_pt_y < 0][cur_pt_x < 0]
+
+        if q - pred_q == -3:
+            w += 1
+        elif q - pred_q == 3:
+            w -= 1
+        elif q - pred_q == -2:
+            if pred_pt_x * cur_pt_y >= pred_pt_y * cur_pt_x:
+                w += 1
+        elif q - pred_q == 2:
+            if not (pred_pt_x * cur_pt_y >= pred_pt_y * cur_pt_x):
+                w -= 1
+
+        pred_pt_x, pred_pt_y = cur_pt_x, cur_pt_y
+        pred_q = q
+
+    return w != 0
+
+
 class MapDesc:
 
     def __init__(self):
         self.polygons = [
             [(0, 150), (150, 150), (150, 350), (0, 350)],
-            [(100, 0), (250, 200), (600, 200), (600, 0)],
+            [(100, 0), (250, 200), (380, 100), (600, 200), (600, 0)],
             [(100, 550), (250, 300), (600, 300), (600, 550)],
         ]
-        self.control_points = [
-            (180, 140),
-            (180, 360),
-            (240, 250),
-            (470, 250),
-            (65, 85),
-            (65, 450),
-        ]
+        self.control_points = []
+        self.detect_control_points(offset=30)
 
         self.graph = Graph()
         self.build_graph()
+
+    def detect_control_points(self, offset=10):
+        for poly in self.polygons:
+            if len(poly) == 0:
+                continue
+
+            count = len(poly) - 1
+            for i in xrange(count):
+                p0 = poly[i - 1] if i > 0 else poly[count - 1]
+                p1 = poly[i]
+                p2 = poly[i + 1] if i < (count - 1) else poly[0]
+
+                l0 = (p1[0] - p0[0], p1[1] - p0[1])
+                l1 = (p1[0] - p2[0], p1[1] - p2[1])
+                l = (l0[0] + l1[0], l0[1] + l1[1])
+                l = (l[0] / 2, l[1] / 2)
+
+                vx = l[0]
+                vy = l[1]
+                length = math.sqrt(vx * vx + vy * vy)
+                if length > 0:
+                    vx /= length
+                    vy /= length
+                else:
+                    vx, vy = 1, 0
+
+                vx *= offset
+                vy *= offset
+                vx = p1[0] + vx
+                vy = p1[1] + vy
+                if vx < 0 or vx >= MAX_X:
+                    continue
+                if vy < 0 or vy >= MAX_Y:
+                    continue
+                if not point_in_polygon((vx, vy), poly):
+                    print vx, vy
+                    self.control_points.append((vx, vy))
 
     def build_graph(self):
         i = 0
@@ -177,9 +248,8 @@ if __name__ == '__main__':
     map = MapDesc()
     map.draw()
 
-    path = map.build_path((50, 70), (25, 450))
-    # path = map.build_path((50, 70), (160, 250))
-    map.draw_path(path, color=(128, 128, 255, 255))
+    path = map.build_path((50, 70), (390, 130))
+    map.draw_path(path, color=(128, 128, 255, 64))
     map.draw_path(map.improve_path(path))
 
     path = map.build_path((20, 20), (500, 220))
