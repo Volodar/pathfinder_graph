@@ -1,7 +1,8 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from graph import *
 import random
 import math
+
 
 MAX_X = 512
 MAX_Y = 512
@@ -21,6 +22,11 @@ def draw_line(x0, y0, x1, y1, color=(0, 0, 0, 255), width=1):
     y0 = im.height - y0
     y1 = im.height - y1
     draw.line((x0, y0, x1, y1), fill=color, width=width)
+
+
+def draw_text(x, y, string):
+    font = ImageFont.load_default()
+    draw.text((int(x), int(im.height - y)), str(string), font=font, fill=(0, 0, 0, 192))
 
 
 def draw_point(x, y, radius=1, color=(0, 0, 0, 255)):
@@ -162,6 +168,9 @@ class MapDesc:
             draw_point(x, y, 5, GREEN)
         for link in self.graph.links:
             draw_line(link.a.x, link.a.y, link.b.x, link.b.y, color=(128, 128, 128, 128))
+            x = (link.a.x + link.b.x) / 2
+            y = (link.a.y + link.b.y) / 2
+            draw_text(x, y, int(link.weight))
 
     def draw_path(self, points, color=BLUE):
         if len(points) == 0:
@@ -250,10 +259,11 @@ if __name__ == '__main__':
 
     path = map.build_path((50, 70), (390, 130))
     map.draw_path(path, color=(128, 128, 255, 64))
+    map.draw()
     map.draw_path(map.improve_path(path))
 
     path = map.build_path((20, 20), (500, 220))
-    map.draw_path(path, color=(128, 128, 255, 255))
+    map.draw_path(path, color=(128, 128, 255, 64))
     map.draw_path(map.improve_path(path))
 
     im.save('path.png', "PNG")

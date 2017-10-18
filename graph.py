@@ -1,3 +1,4 @@
+import math
 
 INF = 10E+15
 
@@ -23,7 +24,9 @@ class Link:
         self.weight = 0
 
     def compute_weight(self):
-        self.weight = self.a.x * self.a.x + self.b.x * self.b.x
+        x = self.a.x - self.b.x
+        y = self.a.y - self.b.y
+        self.weight = int(math.sqrt(x * x + y * y))
 
 
 class Graph:
@@ -77,8 +80,11 @@ def dijkstra(graph, nodeA, nodeB):
         for link in node.links:
             weight = node.weight + link.weight
             neighbor = link.a if link.a != node else link.b
-            if not neighbor.visit and neighbor.weight > weight:
+            if neighbor.weight > weight:
                 neighbor.weight = weight
+
+        for link in node.links:
+            neighbor = link.a if link.a != node else link.b
             if not neighbor.visit:
                 wave(neighbor)
     wave(nodeA)
@@ -90,15 +96,15 @@ def dijkstra(graph, nodeA, nodeB):
         if node == nodeA:
             break
 
-        min_weight = INF
         next = None
         for i, link in enumerate(node.links):
             neighbor = link.a if link.a != node else link.b
-            if min_weight > neighbor.weight:
-                min_weight = neighbor.weight
+            if node.weight == neighbor.weight + link.weight:
                 next = neighbor
+                break
         node = next
     path.reverse()
+
     return path
 
 
